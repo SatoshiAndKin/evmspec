@@ -14,6 +14,7 @@ from evmspec.data import (
     HexBytes32,
     Nonce,
     TransactionHash,
+    UnixTimestamp,
     Wei,
     _decode_hook,
     uint,
@@ -140,6 +141,9 @@ class _TransactionBase(LazyDictStruct, frozen=True, kw_only=True, forbid_unknown
 
     blockNumber: BlockNumber
     """The number of the block including this transaction."""
+
+    blockTimestamp: UnixTimestamp | None = UNSET  # type: ignore [assignment]
+    """The containing block's Unix timestamp, when supplied by the RPC provider."""
 
     transactionIndex: TransactionIndex
     """The index position of the transaction in the block."""
