@@ -7,12 +7,12 @@ Retain the optional transaction `blockTimestamp` schema repair from
 `18a37e099bba69872e38adaee3319c125c97048e`, including its bytes ownership repair.
 Two obsolete typing suppressions are removed; decoding behavior is unchanged.
 
-A clean isolated macOS ARM64 Python 3.12 wheel build succeeds. Tests installed
+Clean isolated macOS ARM64 and Linux ARM64 Python 3.12 wheel builds succeed. Tests installed
 that wheel outside the source tree with the safe checksum revision under
 `PYTHONMALLOC=debug` and `PYTHONFAULTHANDLER=1`. Import inspection confirms
-`evmspec._new` resolves to the new `cpython-312-darwin.so` extension.
+`evmspec._new` resolves to the new platform-specific CPython 3.12 extension.
 
-The complete suite returns 365 passes and two failures in trace action enum
+Both freshly built native wheels return 365 passes and two failures in trace action enum
 inputs. The unchanged compiled original revision returns exactly the same 365
 passes and two failures; those existing enum failures are independent of this
 build dependency repair. Transaction timestamp, modern block, data and schema
