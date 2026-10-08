@@ -74,25 +74,25 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">cached_property</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClassVar</span><span class="p">,</span> <span class="n">Final</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">final</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">msgspec</span><span class="w"> </span><span class="kn">import</span> <span class="n">Raw</span><span class="p">,</span> <span class="n">field</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dictstruct</span><span class="w"> </span><span class="kn">import</span> <span class="n">LazyDictStruct</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">msgspec</span><span class="w"> </span><span class="kn">import</span> <span class="n">UNSET</span><span class="p">,</span> <span class="n">Raw</span><span class="p">,</span> <span class="n">field</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">msgspec.json</span><span class="w"> </span><span class="kn">import</span> <span class="n">Decoder</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">evmspec.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">Address</span><span class="p">,</span> <span class="n">_decode_hook</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">evmspec.data._enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">StringToIntEnumMeta</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">evmspec.structs.trace._base</span><span class="w"> </span><span class="kn">import</span> <span class="n">_ActionBase</span><span class="p">,</span> <span class="n">_FilterTraceBase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">evmspec.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">Address</span><span class="p">,</span> <span class="n">Wei</span><span class="p">,</span> <span class="n">_decode_hook</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">evmspec.structs.trace._base</span><span class="w"> </span><span class="kn">import</span> <span class="n">_BlockTraceBase</span>
 
 
 <div class="viewcode-block" id="Type">
 <a class="viewcode-back" href="../../../../source/evmspec.structs.trace.html#evmspec.structs.trace.reward.Type">[docs]</a>
 <span class="nd">@final</span>
-<span class="k">class</span><span class="w"> </span><span class="nc">Type</span><span class="p">(</span><span class="n">Enum</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">StringToIntEnumMeta</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Type</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Represents the types of rewards in Ethereum: block or uncle.</span>
 
 <span class="sd">    This enum is used to specify the type of reward in Ethereum traces.</span>
 
 <span class="sd">    Attributes:</span>
-<span class="sd">        block (int): Represents a block reward.</span>
-<span class="sd">        uncle (int): Represents an uncle reward.</span>
+<span class="sd">        block (str): Represents a block reward.</span>
+<span class="sd">        uncle (str): Represents an uncle reward.</span>
 
 <span class="sd">    Example:</span>
 <span class="sd">        &gt;&gt;&gt; reward_type = Type.block</span>
@@ -100,8 +100,8 @@
 <span class="sd">        Type.block</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">block</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="n">uncle</span> <span class="o">=</span> <span class="mi">1</span></div>
+    <span class="n">block</span> <span class="o">=</span> <span class="s2">&quot;block&quot;</span>
+    <span class="n">uncle</span> <span class="o">=</span> <span class="s2">&quot;uncle&quot;</span></div>
 
 
 
@@ -109,7 +109,7 @@
 <a class="viewcode-back" href="../../../../source/evmspec.structs.trace.html#evmspec.structs.trace.reward.Action">[docs]</a>
 <span class="nd">@final</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Action</span><span class="p">(</span>  <span class="c1"># type: ignore [misc]</span>
-    <span class="n">_ActionBase</span><span class="p">,</span>
+    <span class="n">LazyDictStruct</span><span class="p">,</span>
     <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">kw_only</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">forbid_unknown_fields</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -118,8 +118,8 @@
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Action type for rewards.</span>
 
-<span class="sd">    This class extends :class:`_ActionBase` to include specific attributes</span>
-<span class="sd">    for reward actions in Ethereum traces.</span>
+<span class="sd">    Rewards contain the author, value, and reward type. They do not have</span>
+<span class="sd">    a transaction sender or gas allocation.</span>
 
 <span class="sd">    Attributes:</span>
 <span class="sd">        author (Address): The author of this reward.</span>
@@ -130,6 +130,9 @@
 <span class="sd">        &gt;&gt;&gt; print(action.author)</span>
 <span class="sd">        0x123</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">value</span><span class="p">:</span> <span class="n">Wei</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The reward amount in Wei.&quot;&quot;&quot;</span>
 
     <span class="n">author</span><span class="p">:</span> <span class="n">Address</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The author of this reward.&quot;&quot;&quot;</span>
@@ -143,7 +146,7 @@
 <a class="viewcode-back" href="../../../../source/evmspec.structs.trace.html#evmspec.structs.trace.reward.Trace">[docs]</a>
 <span class="nd">@final</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Trace</span><span class="p">(</span>  <span class="c1"># type: ignore [misc]</span>
-    <span class="n">_FilterTraceBase</span><span class="p">,</span>
+    <span class="n">_BlockTraceBase</span><span class="p">,</span>
     <span class="n">tag</span><span class="o">=</span><span class="s2">&quot;reward&quot;</span><span class="p">,</span>
     <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">kw_only</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -153,7 +156,7 @@
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Represents the trace for a reward in Ethereum.</span>
 
-<span class="sd">    This class extends :class:`_FilterTraceBase` and is specifically tagged</span>
+<span class="sd">    This class extends :class:`_BlockTraceBase` and is specifically tagged</span>
 <span class="sd">    as a &quot;reward&quot; trace. It includes raw data for the reward action that</span>
 <span class="sd">    requires decoding.</span>
 
@@ -162,14 +165,14 @@
 <span class="sd">        _action (Raw): Raw data of the reward action, requires decoding to be useful.</span>
 
 <span class="sd">    Example:</span>
-<span class="sd">        &gt;&gt;&gt; trace = Trace(blockNumber=123, blockHash=BlockHash(&quot;0xabc&quot;), transactionHash=TransactionHash(&quot;0xdef&quot;), transactionPosition=0, traceAddress=[], subtraces=0, _action=Raw(b&#39;...&#39;))</span>
+<span class="sd">        &gt;&gt;&gt; trace = Trace(blockNumber=123, blockHash=BlockHash(&quot;0xabc&quot;), traceAddress=[], subtraces=0, _action=Raw(b&#39;...&#39;))</span>
 <span class="sd">        &gt;&gt;&gt; decoded_action = trace.action</span>
 <span class="sd">        &gt;&gt;&gt; print(decoded_action.rewardType)</span>
 <span class="sd">        Type.block</span>
 
 <span class="sd">    See Also:</span>
 <span class="sd">        - :class:`Action`: The decoded action object.</span>
-<span class="sd">        - :class:`_FilterTraceBase`: The base class for trace representations.</span>
+<span class="sd">        - :class:`_BlockTraceBase`: The base class for trace representations.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="nb">type</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;reward&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="s2">&quot;reward&quot;</span>
@@ -186,6 +189,9 @@
     <span class="n">_action</span><span class="p">:</span> <span class="n">Raw</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;action&quot;</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Raw data of the reward action, requires decoding to be useful.&quot;&quot;&quot;</span>
 
+    <span class="n">result</span><span class="p">:</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">UNSET</span>  <span class="c1"># type: ignore [assignment]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An optional null result, preserved when supplied by the node.&quot;&quot;&quot;</span>
+
     <span class="nd">@cached_property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">action</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Action</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Decodes the raw reward action into an :class:`Action` object, using parity style.</span>
@@ -198,7 +204,7 @@
 <span class="sd">            The decoded action.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; trace = Trace(blockNumber=123, blockHash=BlockHash(&quot;0xabc&quot;), transactionHash=TransactionHash(&quot;0xdef&quot;), transactionPosition=0, traceAddress=[], subtraces=0, _action=Raw(b&#39;...&#39;))</span>
+<span class="sd">            &gt;&gt;&gt; trace = Trace(blockNumber=123, blockHash=BlockHash(&quot;0xabc&quot;), traceAddress=[], subtraces=0, _action=Raw(b&#39;...&#39;))</span>
 <span class="sd">            &gt;&gt;&gt; action = trace.action</span>
 <span class="sd">            &gt;&gt;&gt; print(action.author)</span>
 <span class="sd">            0x123</span>
