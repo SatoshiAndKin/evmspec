@@ -2,7 +2,7 @@ name: PyTest
 
 on:
   pull_request:
-    branch: master
+    branches: [master]
     paths:
       - '**.py'
       - '**/pytest.yaml'
@@ -98,6 +98,6 @@ jobs:
 
           tests = os.path.join(os.environ["GITHUB_WORKSPACE"], "tests")
           raise SystemExit(
-              subprocess.call([sys.executable, "-m", "pytest", "--import-mode=importlib", tests])
+              subprocess.call([sys.executable, "-m", "pytest", tests])
           )
           PY

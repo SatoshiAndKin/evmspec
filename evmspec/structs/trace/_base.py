@@ -117,7 +117,7 @@ class _ResultBase(  # type: ignore [misc]
     """
 
 
-class _FilterTraceBase(  # type: ignore [misc]
+class _BlockTraceBase(  # type: ignore [misc]
     LazyDictStruct,
     frozen=True,
     kw_only=True,
@@ -127,19 +127,18 @@ class _FilterTraceBase(  # type: ignore [misc]
 ):
     """Base class for representing parity-style traces.
 
-    This class contains attributes detailing the block and transaction being traced,
-    including block number and hash, transaction hash, position, trace addresses,
-    subtraces, and errors if any occurred during execution.
+    This class contains block metadata shared by transaction and reward traces.
+    Transaction-bound traces add transaction metadata in :class:`_FilterTraceBase`.
 
     This class is intended to be subclassed within the repository and is not
     part of the public API. It can be instantiated directly if needed for
     internal purposes.
 
     Examples:
-        >>> from evmspec.structs.trace._base import _FilterTraceBase
-        >>> class MyTrace(_FilterTraceBase):
+        >>> from evmspec.structs.trace._base import _BlockTraceBase
+        >>> class MyTrace(_BlockTraceBase):
         ...     pass
-        >>> trace = MyTrace(blockNumber=123456, blockHash="0xabc...", transactionHash="0xdef...", transactionPosition=1, traceAddress=[0, 1], subtraces=2)
+        >>> trace = MyTrace(blockNumber=123456, blockHash="0xabc...", traceAddress=[0, 1], subtraces=2)
         >>> trace.blockNumber
         123456
 
@@ -152,9 +151,9 @@ class _FilterTraceBase(  # type: ignore [misc]
     """The number of the block where this action happened.
 
     Examples:
-        >>> class MyTrace(_FilterTraceBase):
+        >>> class MyTrace(_BlockTraceBase):
         ...     pass
-        >>> trace = MyTrace(blockNumber=123456, blockHash="0xabc...", transactionHash="0xdef...", transactionPosition=1, traceAddress=[0, 1], subtraces=2)
+        >>> trace = MyTrace(blockNumber=123456, blockHash="0xabc...", traceAddress=[0, 1], subtraces=2)
         >>> trace.blockNumber
         123456
     """
@@ -163,12 +162,69 @@ class _FilterTraceBase(  # type: ignore [misc]
     """The hash of the block where this action happened.
 
     Examples:
-        >>> class MyTrace(_FilterTraceBase):
+        >>> class MyTrace(_BlockTraceBase):
         ...     pass
-        >>> trace = MyTrace(blockNumber=123456, blockHash="0xabc...", transactionHash="0xdef...", transactionPosition=1, traceAddress=[0, 1], subtraces=2)
+        >>> trace = MyTrace(blockNumber=123456, blockHash="0xabc...", traceAddress=[0, 1], subtraces=2)
         >>> trace.blockHash
         '0xabc...'
     """
+
+    traceAddress: list[uint]
+    """The trace addresses (array) representing the path of the call within the trace tree.
+
+    Examples:
+        >>> class MyTrace(_BlockTraceBase):
+        ...     pass
+        >>> trace = MyTrace(blockNumber=123456, blockHash="0xabc...", traceAddress=[0, 1], subtraces=2)
+        >>> trace.traceAddress
+        [0, 1]
+    """
+
+    subtraces: uint
+    """The number of traces of internal transactions that occurred during this transaction.
+
+    Examples:
+        >>> class MyTrace(_BlockTraceBase):
+        ...     pass
+        >>> trace = MyTrace(blockNumber=123456, blockHash="0xabc...", traceAddress=[0, 1], subtraces=2)
+        >>> trace.subtraces
+        2
+    """
+
+    error: str = UNSET  # type: ignore [assignment]
+    """An error message if an error occurred during the execution of the transaction. Defaults to UNSET.
+
+    Examples:
+        >>> class MyTrace(_BlockTraceBase):
+        ...     pass
+        >>> trace = MyTrace(blockNumber=123456, blockHash="0xabc...", traceAddress=[0, 1], subtraces=2, error=UNSET)
+        >>> trace.error
+        UNSET
+    """
+
+    @property
+    def block(self) -> BlockNumber:
+        """A shorthand getter for 'blockNumber'.
+
+        Examples:
+            >>> class MyTrace(_BlockTraceBase):
+            ...     pass
+            >>> trace = MyTrace(blockNumber=123456, blockHash="0xabc...", traceAddress=[0, 1], subtraces=2)
+            >>> trace.block
+            123456
+        """
+        return self.blockNumber
+
+
+class _FilterTraceBase(  # type: ignore [misc]
+    _BlockTraceBase,
+    frozen=True,
+    kw_only=True,
+    forbid_unknown_fields=True,
+    omit_defaults=True,
+    repr_omit_defaults=True,
+):
+    """Base for traces bound to a transaction, with required transaction metadata."""
 
     transactionHash: TransactionHash
     """The hash of the transaction being traced.
@@ -191,49 +247,3 @@ class _FilterTraceBase(  # type: ignore [misc]
         >>> trace.transactionPosition
         1
     """
-
-    traceAddress: list[uint]
-    """The trace addresses (array) representing the path of the call within the trace tree.
-
-    Examples:
-        >>> class MyTrace(_FilterTraceBase):
-        ...     pass
-        >>> trace = MyTrace(blockNumber=123456, blockHash="0xabc...", transactionHash="0xdef...", transactionPosition=1, traceAddress=[0, 1], subtraces=2)
-        >>> trace.traceAddress
-        [0, 1]
-    """
-
-    subtraces: uint
-    """The number of traces of internal transactions that occurred during this transaction.
-
-    Examples:
-        >>> class MyTrace(_FilterTraceBase):
-        ...     pass
-        >>> trace = MyTrace(blockNumber=123456, blockHash="0xabc...", transactionHash="0xdef...", transactionPosition=1, traceAddress=[0, 1], subtraces=2)
-        >>> trace.subtraces
-        2
-    """
-
-    error: str = UNSET  # type: ignore [assignment]
-    """An error message if an error occurred during the execution of the transaction. Defaults to UNSET.
-
-    Examples:
-        >>> class MyTrace(_FilterTraceBase):
-        ...     pass
-        >>> trace = MyTrace(blockNumber=123456, blockHash="0xabc...", transactionHash="0xdef...", transactionPosition=1, traceAddress=[0, 1], subtraces=2, error=UNSET)
-        >>> trace.error
-        UNSET
-    """
-
-    @property
-    def block(self) -> BlockNumber:
-        """A shorthand getter for 'blockNumber'.
-
-        Examples:
-            >>> class MyTrace(_FilterTraceBase):
-            ...     pass
-            >>> trace = MyTrace(blockNumber=123456, blockHash="0xabc...", transactionHash="0xdef...", transactionPosition=1, traceAddress=[0, 1], subtraces=2)
-            >>> trace.block
-            123456
-        """
-        return self.blockNumber

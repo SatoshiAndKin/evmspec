@@ -3,23 +3,23 @@ from enum import Enum
 from functools import cached_property
 from typing import ClassVar, Final, Literal, final
 
-from msgspec import Raw, field
+from dictstruct import LazyDictStruct
+from msgspec import UNSET, Raw, field
 from msgspec.json import Decoder
 
-from evmspec.data import Address, _decode_hook
-from evmspec.data._enum import StringToIntEnumMeta
-from evmspec.structs.trace._base import _ActionBase, _FilterTraceBase
+from evmspec.data import Address, Wei, _decode_hook
+from evmspec.structs.trace._base import _BlockTraceBase
 
 
 @final
-class Type(Enum, metaclass=StringToIntEnumMeta):
+class Type(Enum):
     """Represents the types of rewards in Ethereum: block or uncle.
 
     This enum is used to specify the type of reward in Ethereum traces.
 
     Attributes:
-        block (int): Represents a block reward.
-        uncle (int): Represents an uncle reward.
+        block (str): Represents a block reward.
+        uncle (str): Represents an uncle reward.
 
     Example:
         >>> reward_type = Type.block
@@ -27,13 +27,13 @@ class Type(Enum, metaclass=StringToIntEnumMeta):
         Type.block
     """
 
-    block = 0
-    uncle = 1
+    block = "block"
+    uncle = "uncle"
 
 
 @final
 class Action(  # type: ignore [misc]
-    _ActionBase,
+    LazyDictStruct,
     frozen=True,
     kw_only=True,
     forbid_unknown_fields=True,
@@ -42,8 +42,8 @@ class Action(  # type: ignore [misc]
 ):
     """Action type for rewards.
 
-    This class extends :class:`_ActionBase` to include specific attributes
-    for reward actions in Ethereum traces.
+    Rewards contain the author, value, and reward type. They do not have
+    a transaction sender or gas allocation.
 
     Attributes:
         author (Address): The author of this reward.
@@ -55,6 +55,9 @@ class Action(  # type: ignore [misc]
         0x123
     """
 
+    value: Wei
+    """The reward amount in Wei."""
+
     author: Address
     """The author of this reward."""
 
@@ -64,7 +67,7 @@ class Action(  # type: ignore [misc]
 
 @final
 class Trace(  # type: ignore [misc]
-    _FilterTraceBase,
+    _BlockTraceBase,
     tag="reward",
     frozen=True,
     kw_only=True,
@@ -74,7 +77,7 @@ class Trace(  # type: ignore [misc]
 ):
     """Represents the trace for a reward in Ethereum.
 
-    This class extends :class:`_FilterTraceBase` and is specifically tagged
+    This class extends :class:`_BlockTraceBase` and is specifically tagged
     as a "reward" trace. It includes raw data for the reward action that
     requires decoding.
 
@@ -83,14 +86,14 @@ class Trace(  # type: ignore [misc]
         _action (Raw): Raw data of the reward action, requires decoding to be useful.
 
     Example:
-        >>> trace = Trace(blockNumber=123, blockHash=BlockHash("0xabc"), transactionHash=TransactionHash("0xdef"), transactionPosition=0, traceAddress=[], subtraces=0, _action=Raw(b'...'))
+        >>> trace = Trace(blockNumber=123, blockHash=BlockHash("0xabc"), traceAddress=[], subtraces=0, _action=Raw(b'...'))
         >>> decoded_action = trace.action
         >>> print(decoded_action.rewardType)
         Type.block
 
     See Also:
         - :class:`Action`: The decoded action object.
-        - :class:`_FilterTraceBase`: The base class for trace representations.
+        - :class:`_BlockTraceBase`: The base class for trace representations.
     """
 
     type: ClassVar[Literal["reward"]] = "reward"
@@ -107,6 +110,9 @@ class Trace(  # type: ignore [misc]
     _action: Raw = field(name="action")
     """Raw data of the reward action, requires decoding to be useful."""
 
+    result: None = UNSET  # type: ignore [assignment]
+    """An optional null result, preserved when supplied by the node."""
+
     @cached_property
     def action(self) -> Action:
         """Decodes the raw reward action into an :class:`Action` object, using parity style.
@@ -119,7 +125,7 @@ class Trace(  # type: ignore [misc]
             The decoded action.
 
         Example:
-            >>> trace = Trace(blockNumber=123, blockHash=BlockHash("0xabc"), transactionHash=TransactionHash("0xdef"), transactionPosition=0, traceAddress=[], subtraces=0, _action=Raw(b'...'))
+            >>> trace = Trace(blockNumber=123, blockHash=BlockHash("0xabc"), traceAddress=[], subtraces=0, _action=Raw(b'...'))
             >>> action = trace.action
             >>> print(action.author)
             0x123

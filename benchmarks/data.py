@@ -330,16 +330,19 @@ TRACE_CREATE = {
 }
 
 TRACE_REWARD = {
-    **TRACE_BASE,
+    "blockNumber": TRACE_BASE["blockNumber"],
+    "blockHash": TRACE_BASE["blockHash"],
+    "subtraces": 0,
+    "traceAddress": [],
     "type": "reward",
     "action": {
-        "from": ADDRESS_CHECKSUM,
         "value": "0x0",
-        "gas": "0x5208",
         "author": ADDRESS_CHECKSUM,
         "rewardType": "block",
     },
+    "result": None,
 }
+
 
 TRACE_SUICIDE = {
     **TRACE_BASE,
