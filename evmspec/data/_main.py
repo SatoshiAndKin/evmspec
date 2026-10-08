@@ -3,7 +3,17 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from enum import Enum
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Final, SupportsIndex, TypeAlias, TypeVar, final, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Final,
+    SupportsIndex,
+    TypeAlias,
+    TypeVar,
+    cast,
+    final,
+    overload,
+)
 
 import faster_hexbytes
 from hexbytes import HexBytes
@@ -335,7 +345,7 @@ def _decode_hook(typ: type[_T], obj: object) -> _T:
     if issubclass(typ, (HexBytes, Enum, Decimal)):
         return typ(obj)  # type: ignore [arg-type]
     elif typ is Address:
-        return Address.checksum(obj)
+        return cast(_T, cast(type[Address], typ).checksum(cast(str, obj)))
     elif issubclass(typ, uint):
         if isinstance(obj, str):
             # if obj.startswith("0x"):
@@ -352,7 +362,7 @@ def _decode_hook_unsafe(typ: type[_T], obj: object) -> _T:
     if issubclass(typ, (HexBytes, Enum, Decimal)):
         return typ(obj)  # type: ignore [arg-type]
     elif typ is Address:
-        return __str_new__(Address, obj)
+        return cast(_T, __str_new__(cast(type[Address], typ), cast(str, obj)))
     elif issubclass(typ, uint):
         if isinstance(obj, str):
             # if obj.startswith("0x"):
@@ -403,7 +413,7 @@ class HexBytes32(faster_hexbytes.HexBytes):
     def __repr__(self) -> str:
         return f"{type(self).__name__}(0x{_hex(self)})"
 
-    @overload  #  type: ignore [override]
+    @overload  # type: ignore [override]
     def __getitem__(self, key: SupportsIndex) -> int: ...
 
     @overload

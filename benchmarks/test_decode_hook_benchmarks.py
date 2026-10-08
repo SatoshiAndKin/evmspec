@@ -2,7 +2,7 @@
 from decimal import Decimal
 
 import pytest
-from pytest_codspeed import BenchmarkFixture
+from pytest_benchmark.fixture import BenchmarkFixture
 
 from benchmarks.batch import batch
 from benchmarks.data import ADDRESS_CHECKSUM, HASH_1

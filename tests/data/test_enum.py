@@ -1,21 +1,13 @@
-from enum import Enum
-
 import pytest
+from msgspec.json import decode, encode
 
-from evmspec.data._enum import StringToIntEnumMeta
-
-
-class Color(Enum, metaclass=StringToIntEnumMeta):
-    RED = 1
-    GREEN = 2
+from evmspec.structs.trace import call, reward
 
 
-def test_string_to_int_enum_meta() -> None:
-    assert Color("RED") is Color.RED
-    assert Color(1) is Color.RED
-    assert Color("GREEN") is Color.GREEN
-
-
-def test_string_to_int_enum_meta_invalid() -> None:
-    with pytest.raises(ValueError):
-        Color("BLUE")
+@pytest.mark.parametrize("enum_cls", [call.Type, reward.Type])
+def test_trace_enum_wire_values(enum_cls) -> None:
+    for member in enum_cls:
+        assert member.value == member.name
+        assert enum_cls(member.value) is member
+        assert enum_cls(member) is member
+        assert decode(encode(member)) == member.name

@@ -8,31 +8,30 @@ from msgspec import UNSET, Raw, field
 from msgspec.json import Decoder
 
 from evmspec.data import Address, _decode_hook
-from evmspec.data._enum import StringToIntEnumMeta
 from evmspec.structs.trace._base import _ActionBase, _FilterTraceBase, _ResultBase
 
 
 @final
-class Type(Enum, metaclass=StringToIntEnumMeta):
+class Type(Enum):
     """
     Enum representing the types of contract calls: call, delegatecall, and staticcall.
 
     Examples:
         >>> Type.call
-        <Type.call: 0>
+        <Type.call: 'call'>
         >>> Type.delegatecall
-        <Type.delegatecall: 1>
+        <Type.delegatecall: 'delegatecall'>
         >>> Type.staticcall
-        <Type.staticcall: 2>
+        <Type.staticcall: 'staticcall'>
 
     See Also:
         - :class:`Action`
         - :class:`Trace`
     """
 
-    call = 0
-    delegatecall = 1
-    staticcall = 2
+    call = "call"
+    delegatecall = "delegatecall"
+    staticcall = "staticcall"
 
 
 @final
@@ -50,7 +49,7 @@ class Action(  # type: ignore [misc]
     Examples:
         >>> action = Action(callType=Type.call, to=Address("0x0"), input=HexBytes("0x"))
         >>> action.callType
-        <Type.call: 0>
+        <Type.call: 'call'>
         >>> action.to
         '0x0000000000000000000000000000000000000000'
         >>> action.input
@@ -99,13 +98,13 @@ class Trace(  # type: ignore [misc]
     Represents a trace of a contract call, including action and result details.
 
     Examples:
-        >>> data = b'{"type": "call", "action": {"callType": 0, "to": "0x0", "input": "0x"}, "result": null, "error": "out of gas"}'
+        >>> data = b'{"type": "call", "action": {"callType": "call", "to": "0x0", "input": "0x"}, "result": null, "error": "out of gas"}'
         >>> trace = msgspec.json.decode(data, type=Trace)
-        >>> trace = Trace(_action=Raw(b'{"callType": 0, "to": "0x0", "input": "0x"}'), result=None)
+        >>> trace = Trace(_action=Raw(b'{"callType": "call", "to": "0x0", "input": "0x"}'), result=None)
         >>> trace.type
         'call'
         >>> trace.action.callType
-        <Type.call: 0>
+        <Type.call: 'call'>
         >>> trace.result is None
         True
         >>> trace.error
