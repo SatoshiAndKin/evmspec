@@ -1,6 +1,6 @@
 # mypy: disable-error-code=misc
 import pytest
-from pytest_codspeed import BenchmarkFixture
+from pytest_benchmark.fixture import BenchmarkFixture
 
 from benchmarks.batch import batch
 from benchmarks.data import UINT_HEX_CASES, UINT_HEX_CASE_IDS

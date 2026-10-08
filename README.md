@@ -31,3 +31,11 @@ block metadata without transaction metadata, and preserve an optional null
 - [transaction](https://bobthebuidler.github.io/evmspec/source/evmspec.html#module-evmspec.transaction)
 - and more
   
+
+### Decoder compatibility
+
+This fork requires `msgspec==0.19.0`, the version used by the tested pricing stack.
+Newer decoders bypass the receipt status metaclass and reject valid RPC hex statuses
+such as `"0x1"`. The dependency pin preserves the existing `Status.success` and
+`Status.failure` members and their integer values. Receipt regressions exercise
+actual JSON-RPC hex statuses, independently of trace enum string tests.

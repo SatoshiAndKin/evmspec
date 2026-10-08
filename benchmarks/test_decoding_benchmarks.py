@@ -1,7 +1,7 @@
 # mypy: disable-error-code=misc
 import pytest
 from msgspec.json import Decoder
-from pytest_codspeed import BenchmarkFixture
+from pytest_benchmark.fixture import BenchmarkFixture
 
 from benchmarks.batch import batch
 from benchmarks.data import (

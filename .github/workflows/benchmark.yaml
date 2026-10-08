@@ -26,8 +26,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  codspeed:
-    name: Run CodSpeed Benchmarks
+  benchmarks:
+    name: Run Benchmarks
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -85,23 +85,28 @@ jobs:
               raise SystemExit(f"evmspec._new is not a compiled extension: {path}")
           PY
 
-      - name: Run CodSpeed
-        uses: CodSpeedHQ/action@v4
-        with:
-          mode: instrumentation
-          run: |
-            PYTHON="$(poetry env info --executable)"
-            unset PYTHONPATH
-            cd "$RUNNER_TEMP"
-            "$PYTHON" - <<'PY'
-            import os
-            import subprocess
-            import sys
+      - name: Run benchmarks against the installed native package
+        shell: bash
+        run: |
+          PYTHON="$(poetry env info --executable)"
+          unset PYTHONPATH
+          cd "$RUNNER_TEMP"
+          "$PYTHON" - <<'PY'
+          import os
+          import subprocess
+          import sys
 
-            benchmarks = os.path.join(os.environ["GITHUB_WORKSPACE"], "benchmarks")
-            raise SystemExit(
-                subprocess.call(
-                    [sys.executable, "-m", "pytest", "--import-mode=importlib", "--codspeed", benchmarks]
-                )
-            )
-            PY
+          benchmarks = os.path.join(os.environ["GITHUB_WORKSPACE"], "benchmarks")
+          raise SystemExit(
+              subprocess.call(
+                  [sys.executable, "-m", "pytest", benchmarks]
+              )
+          )
+          PY
+
+      - name: Keep benchmark results
+        uses: actions/upload-artifact@v7
+        with:
+          name: benchmark-results
+          path: ${{ runner.temp }}/benchmark-results.json
+          if-no-files-found: error

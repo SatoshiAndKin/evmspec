@@ -1,7 +1,7 @@
 # mypy: disable-error-code=misc
 import pytest
 from hexbytes import HexBytes
-from pytest_codspeed import BenchmarkFixture
+from pytest_benchmark.fixture import BenchmarkFixture
 
 from benchmarks.batch import batch
 from evmspec.data import uints
