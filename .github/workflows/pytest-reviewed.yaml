@@ -1,0 +1,98 @@
+name: Reviewed PyTest
+
+on:
+  workflow_call:
+    secrets:
+      ETHERSCAN_TOKEN:
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    if: github.repository == 'SatoshiAndKin/evmspec'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ski-kvm-public-pr, macos-latest, windows-latest ]
+        pyversion: [ "3.10", "3.11", "3.12", "3.13" ]
+        include:
+        - os: ski-kvm-public-pr
+          path: ~/.cache/pip
+        - os: macos-latest
+          path: ~/Library/Caches/pip
+        - os: windows-latest
+          path: ~\AppData\Local\pip\Cache
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Setup Python (faster than using Python container)
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.pyversion }}
+
+      - name: Load cached Poetry installation
+        id: cached-poetry
+        uses: actions/cache@v5
+        with:
+          path: ${{ github.workspace }}/.poetry
+          key: poetry-${{ runner.os }}-${{ matrix.pyversion }}${{ matrix.os == 'ski-kvm-public-pr' && '-k3s-0' || '-0' }}
+
+      - name: Add cached Poetry to PATH
+        if: steps.cached-poetry.outputs.cache-hit == 'true'
+        shell: bash
+        run: echo "${{ github.workspace }}/.poetry/bin" >> "$GITHUB_PATH"
+
+      - name: Install Poetry
+        if: steps.cached-poetry.outputs.cache-hit != 'true'
+        uses: snok/install-poetry@v1
+        with:
+          poetry-home: ${{ github.workspace }}/.poetry
+
+      - name: Install locked dependencies and evmspec
+        shell: bash
+        run: |
+          poetry install --no-root
+          poetry run python -m pip install --no-deps .
+
+      - name: Verify compiled extension
+        shell: bash
+        run: |
+          PYTHON="$(poetry env info --executable)"
+          unset PYTHONPATH
+          cd "$RUNNER_TEMP"
+          "$PYTHON" - <<'PY'
+          import importlib.machinery
+
+          from evmspec import _new
+
+          path = _new.__file__ or ""
+          print(f"evmspec._new: {path}")
+          if not path.endswith(tuple(importlib.machinery.EXTENSION_SUFFIXES)):
+              raise SystemExit(f"evmspec._new is not a compiled extension: {path}")
+          PY
+
+      - name: Run test suite
+        shell: bash
+        env:
+          PYTEST_NETWORK: mainnet
+          ETHERSCAN_TOKEN: ${{ secrets.ETHERSCAN_TOKEN  }}
+        run: |
+          PYTHON="$(poetry env info --executable)"
+          unset PYTHONPATH
+          cd "$RUNNER_TEMP"
+          "$PYTHON" - <<'PY'
+          import os
+          import subprocess
+          import sys
+
+          tests = os.path.join(os.environ["GITHUB_WORKSPACE"], "tests")
+          raise SystemExit(
+              subprocess.call([sys.executable, "-m", "pytest", tests])
+          )
+          PY
