@@ -1,27 +1,60 @@
+---
 name: PyTest
-
-on:
-  pull_request:
-    branches: [master]
-    paths:
-      - '**.py'
-      - '**/pytest.yaml'
-      - '.github/workflows/pytest-reviewed.yaml'
-      - 'pyproject.toml'
-      - 'poetry.lock'
-  schedule:
-    - cron: '0 2 * * *' # Every day at 2:00 AM UTC
-
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: "${{ github.workflow }}-${{ github.ref }}"
   cancel-in-progress: true
-
-
 permissions:
   contents: read
-
 jobs:
+  ci_changes:
+    name: Select validation paths
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      run_validation: "${{ steps.paths.outputs.run_validation }}"
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        persist-credentials: false
+    - id: paths
+      env:
+        GH_TOKEN: "${{ github.token }}"
+        CI_INCLUDE_PATHS: '["**.py","**/pytest.yaml",".github/workflows/pytest-reviewed.yaml","pyproject.toml","poetry.lock"]'
+        CI_IGNORE_PATHS: "[]"
+      run: python3 .github/scripts/ci_changes.py
   test:
     uses: SatoshiAndKin/evmspec/.github/workflows/pytest-reviewed.yaml@ed7c625d9c0113fbff6f0f3e66ea71d79d9fd809
     secrets:
-      ETHERSCAN_TOKEN: ${{ secrets.ETHERSCAN_TOKEN }}
+      ETHERSCAN_TOKEN: "${{ secrets.ETHERSCAN_TOKEN }}"
+    needs:
+    - ci_changes
+    if: "${{ needs.ci_changes.outputs.run_validation == 'true' }}"
+  ci_gate:
+    name: CI (pytest.yaml)
+    if: "${{ !cancelled() }}"
+    needs:
+    - ci_changes
+    - test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        persist-credentials: false
+    - name: Verify validation contract
+      env:
+        CI_GATE_NEEDS: "${{ toJSON(needs) }}"
+        CI_EXPECTED_JOBS: '["test"]'
+      run: |-
+        python3 -m unittest discover -s .github/scripts -p test_ci_contract.py
+        python3 .github/scripts/ci_gate.py
+'on':
+  pull_request:
+    paths: ["**"]
+    branches:
+    - master
+  schedule:
+  - cron: 0 2 * * *
